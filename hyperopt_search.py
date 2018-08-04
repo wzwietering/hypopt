@@ -31,14 +31,11 @@ def get_loss(X, Y, params):
 
 def random_params(param_ranges):
     params = {}
-    params["colsample_bytree"] = random.uniform(param_ranges["colsample_bytree"][0], param_ranges["colsample_bytree"][1])
-    params["gamma"] = random.uniform(param_ranges["gamma"][0], param_ranges["gamma"][1])
-    params["learning_rate"] = random.uniform(param_ranges["learning_rate"][0], param_ranges["learning_rate"][1])
-    params["max_depth"] = random.randint(param_ranges["max_depth"][0], param_ranges["max_depth"][1])
-    params["min_child_weight"] = random.uniform(param_ranges["min_child_weight"][0], param_ranges["min_child_weight"][1])
-    params["alpha"] = random.uniform(param_ranges["alpha"][0], param_ranges["alpha"][1])
-    params["lambda"] = random.uniform(param_ranges["lambda"][0], param_ranges["lambda"][1])
-    params["subsample"] = random.uniform(param_ranges["subsample"][0], param_ranges["subsample"][1])
+    for key in param_ranges.keys():
+        if type(param_ranges[key][0]) == int:
+            params[key] = random.randint(param_ranges[key][0], param_ranges[key][1])
+        else:
+            params[key] = random.uniform(param_ranges[key][0], param_ranges[key][1])
     return params
 
 def optimize_param(params, param, step_size):
@@ -49,6 +46,7 @@ def optimize_param(params, param, step_size):
     increased = True
     improved = True
     times_no_improvement = 0
+    best = params[param]
     while True:
         if increased and improved:
             if params[param] + step_size > param_ranges[param][1]: 
@@ -56,32 +54,33 @@ def optimize_param(params, param, step_size):
                 break
             params[param] += step_size
             increased = True
-            print("Increased value")
+            print("Increased value of " + param + " to " + str(params[param]))
         elif not increased and improved:
             if params[param] - step_size < param_ranges[param][0]: 
                 print("Reached min bound")
                 break
             params[param] -= step_size
             increased = False 
-            print("Decreased value")
+            print("Decreased value of " + param + " to " + str(params[param]))
         elif increased and not improved:
             if params[param] - 2 * step_size < param_ranges[param][0]: 
                 print("Reached min bound")
                 break
             params[param] -= 2 * step_size
             increased = False 
-            print("Decreased value")
+            print("Decreased value of " + param + " to " + str(params[param]))
         else:
             if params[param] + 2 * step_size > param_ranges[param][1]: 
                 print("Reached max bound")
                 break
             params[param] += 2 * step_size
             increased = True
-            print("Increased value")
+            print("Increased value of " + param + " to " + str(params[param]))
         loss = get_loss(X, Y, params)
         if loss > old_loss:
             print("Improved from " + str(old_loss) + " to " + str(loss))
             old_loss = loss
+            best = params[param]
             steps.append(loss)
             times_no_improvement = 0
             improved = True
@@ -90,20 +89,29 @@ def optimize_param(params, param, step_size):
             times_no_improvement += 1
             if times_no_improvement == 2: break
             improved = False
-    print(steps)
+    print("Steps taken: " + str(steps))
+    print("Best value for " + param + " is " + str(best))
+    params[param] = best
     return params
 
 if __name__ == "__main__":
     X, Y = load_dataset()
     param_ranges = {
-        "colsample_bytree":(0, 1.0),
-        "gamma": (0, 0.5),
+        "colsample_bytree":(0.0, 1.0),
+        "gamma": (0.0, 0.5),
         "learning_rate":(0.01, 0.1),
         "max_depth":(0, 10),
         "min_child_weight": (0, 5),
-        "alpha": (0, 0.5),
-        "lambda": (0, 0.5),
-        "subsample":(0, 1.0),
+        "alpha": (0.0, 0.5),
+        "lambda": (0.0, 0.5),
+        "subsample":(0.0, 1.0),
         }
     rand_params = random_params(param_ranges)
-    optimize_param(rand_params, "learning_rate", 0.01)
+    for key in param_ranges.keys():
+        if type(param_ranges[key][0]) == int:
+            rand_params = optimize_param(rand_params, key, 1)
+        else:
+            rand_params = optimize_param(rand_params, key, 0.001)
+    final_loss = get_loss(X, Y, rand_params)
+    print("Best values: " + str(rand_params))
+    print("Final loss: " + str(final_loss))
