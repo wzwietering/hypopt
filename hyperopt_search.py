@@ -111,14 +111,22 @@ if __name__ == "__main__":
         "max_delta_step": (0, 10),
         "colsample_bylevel": (0.0, 1.0),
         }
-    rand_params = random_params(param_ranges)
-    for key in param_ranges.keys():
-        if type(param_ranges[key][0]) == int:
-            rand_params = optimize_param(rand_params, key, 1)
-        else:
-            rand_params = optimize_param(rand_params, key, 0.001)
-    final_loss = get_loss(X, Y, rand_params)
-    print("Best values: " + str(rand_params))
-    print("Final loss: " + str(final_loss))
-    with open("best.json", "w", encoding="utf-8") as f:
-        f.write(json.dumps(rand_params))
+    best_loss = -10
+    best_params = {}
+    for i in range(10):
+        print("\nScoring set " + str(i) + "\n")
+        rand_params = random_params(param_ranges)
+        for key in param_ranges.keys():
+            if type(param_ranges[key][0]) == int:
+                rand_params = optimize_param(rand_params, key, 1)
+            else:
+                rand_params = optimize_param(rand_params, key, 0.001)
+        final_loss = get_loss(X, Y, rand_params)
+        print("Best values: " + str(rand_params))
+        print("Final loss: " + str(final_loss))
+        if final_loss > best_loss:
+            print("New best loss: " + str(final_loss))
+            best_loss = final_loss
+            best_params = rand_params 
+            with open("best.json", "w", encoding="utf-8") as f:
+                f.write(json.dumps(rand_params))
