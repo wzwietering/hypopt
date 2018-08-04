@@ -24,7 +24,10 @@ def get_loss(X, Y, params):
                                  min_child_weight=params["min_child_weight"],
                                  alpha=params["alpha"],
                                  reg_lambda=params["lambda"],
-                                 subsample=params["subsample"])
+                                 subsample=params["subsample"],
+                                 max_delta_step=params["max_delta_step"],
+                                 colsample_bylevel=params["colsample_bylevel"],
+                                 )
 
     scores = cross_val_score(model_xgb, X, Y, cv=5, scoring='neg_mean_squared_error')
     return scores.mean()
@@ -97,14 +100,16 @@ def optimize_param(params, param, step_size):
 if __name__ == "__main__":
     X, Y = load_dataset()
     param_ranges = {
-        "colsample_bytree":(0.0, 1.0),
+        "colsample_bytree": (0.0, 1.0),
         "gamma": (0.0, 0.5),
-        "learning_rate":(0.01, 0.1),
-        "max_depth":(0, 10),
+        "learning_rate": (0.01, 0.1),
+        "max_depth": (0, 10),
         "min_child_weight": (0, 5),
         "alpha": (0.0, 0.5),
         "lambda": (0.0, 0.5),
-        "subsample":(0.0, 1.0),
+        "subsample": (0.0, 1.0),
+        "max_delta_step": (0, 10),
+        "colsample_bylevel": (0.0, 1.0),
         }
     rand_params = random_params(param_ranges)
     for key in param_ranges.keys():
@@ -115,3 +120,5 @@ if __name__ == "__main__":
     final_loss = get_loss(X, Y, rand_params)
     print("Best values: " + str(rand_params))
     print("Final loss: " + str(final_loss))
+    with open("best.json", "w", encoding="utf-8") as f:
+        f.write(json.dumps(rand_params))
