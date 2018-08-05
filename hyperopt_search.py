@@ -3,6 +3,8 @@ import xgboost as xgb
 import pandas as pd
 import random
 
+import datacollector
+
 from sklearn.model_selection import cross_val_score
 
 def load_dataset():
@@ -42,7 +44,7 @@ def random_params(param_ranges):
     return params
 
 def optimize_param(params, param, step_size):
-    global X, Y, param_ranges
+    global X, Y, param_ranges, dc
     initial = params[param]
     steps = []
     old_loss = get_loss(X, Y, params)
@@ -80,6 +82,7 @@ def optimize_param(params, param, step_size):
             increased = True
             print("Increased value of " + param + " to " + str(params[param]))
         loss = get_loss(X, Y, params)
+        dc.save_params(params, loss)
         if loss > old_loss:
             print("Improved from " + str(old_loss) + " to " + str(loss))
             old_loss = loss
@@ -102,8 +105,8 @@ if __name__ == "__main__":
     param_ranges = {
         "colsample_bytree": (0.0, 1.0),
         "gamma": (0.0, 0.5),
-        "learning_rate": (0.01, 0.1),
-        "max_depth": (0, 10),
+        "learning_rate": (0.01, 0.2),
+        "max_depth": (0, 15),
         "min_child_weight": (0, 5),
         "alpha": (0.0, 0.5),
         "lambda": (0.0, 0.5),
@@ -113,6 +116,7 @@ if __name__ == "__main__":
         }
     best_loss = -10
     best_params = {}
+    dc = datacollector.DataCollector(param_ranges)
     for i in range(10):
         print("\nScoring set " + str(i) + "\n")
         rand_params = random_params(param_ranges)
@@ -122,6 +126,7 @@ if __name__ == "__main__":
             else:
                 rand_params = optimize_param(rand_params, key, 0.001)
         final_loss = get_loss(X, Y, rand_params)
+        dc.commit()
         print("Best values: " + str(rand_params))
         print("Final loss: " + str(final_loss))
         if final_loss > best_loss:
