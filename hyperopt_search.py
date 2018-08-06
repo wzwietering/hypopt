@@ -100,6 +100,16 @@ def optimize_param(params, param, step_size):
     params[param] = best
     return params
 
+def gatherMetaData(loops):
+    global X, Y, dc, param_ranges
+    for i in range(loops):
+        rand_params = random_params(param_ranges)
+        loss = get_loss(X, Y, rand_params)
+        dc.save_params(params, loss)
+        if i % 20 == 0:
+            print("Committed data at iteration " + str(i))
+            dc.commit()
+
 if __name__ == "__main__":
     X, Y = load_dataset()
     param_ranges = {
@@ -117,6 +127,7 @@ if __name__ == "__main__":
     best_loss = -10
     best_params = {}
     dc = datacollector.DataCollector(param_ranges)
+
     for i in range(10):
         print("\nScoring set " + str(i) + "\n")
         rand_params = random_params(param_ranges)
